@@ -1,78 +1,62 @@
 import { Component } from 'react';
 import { GlobalStyle } from './GlobalStyle';
-import { ContactForm } from './ContactForm/ContactForm';
-import { ContactList } from './ContactList/ContactList';
-import { Filter } from './Filter/Filter';
-import { nanoid } from 'nanoid';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+// import { Loader } from './Loader/Loader';
+import { Button } from './Button/Button';
+import { fetchImages } from '../api';
 
 export class App extends Component {
   state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+    images: [],
+    query: '',
+    page: 1,
   };
 
-  addContact = newConact => {
-    const hasName = this.state.contacts.some(
-      contact => contact.name === newConact.name
-    );
-    if (hasName) {
-      alert(`${newConact.name} is already in contacts.`);
-      return;
-    } else {
-      const contact = { ...newConact, id: nanoid() };
-      this.setState(prevState => {
-        return { contacts: [...prevState.contacts, contact] };
-      });
+  async componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.query !== this.state.query ||
+      prevState.page !== this.state.page
+    ) {
+      const { query, page } = this.state;
+      const slashIndex = query.indexOf('/') + 1;
+      const trimedQuery = query.slice(slashIndex, query.length);
+      try {
+        const fetchedImages = await fetchImages(trimedQuery, page);
+        this.setState(prevState => {
+          return { images: [...prevState.images, ...fetchedImages.data.hits] };
+        });
+      } catch (error) {}
     }
+  }
+
+  getSearchInfo = event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const newQuery = form.elements.search.value;
+    form.reset();
+    this.setState({ query: `${Date.now()}/${newQuery}`, page: 1, images: [] });
   };
 
-  setFilter = newSearch => {
-    this.setState(prevState => {
-      return { filter: newSearch };
-    });
-  };
-
-  deleteContact = ContactId => {
+  handleLoadMore = () => {
     this.setState(prevState => {
       return {
-        contacts: prevState.contacts.filter(
-          contact => contact.id !== ContactId
-        ),
+        page: prevState.page + 1,
       };
     });
   };
 
   render() {
-    const { contacts, filter } = this.state;
-
-    const visibleContacts = contacts.filter(contact => {
-      const hasFilteredName = contact.name
-        .toLowerCase()
-        .includes(filter.toLowerCase());
-
-      return hasFilteredName;
-    });
-
+    const { images } = this.state;
     return (
       <div>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmitForm={this.addContact} />
-
-        <h2>Contacts</h2>
-        <Filter
-          onSetFilter={this.setFilter}
-          currentFilter={this.state.filter}
-        />
-        <ContactList
-          contactInfo={visibleContacts}
-          onDelete={this.deleteContact}
-        />
-
+        <Searchbar onSubmit={this.getSearchInfo} />
+        {this.state.images.length > 0 && (
+          <>
+            <ImageGallery findedImages={images} />
+            <Button onSerchClick={this.handleLoadMore} />
+          </>
+        )}
         <GlobalStyle />
       </div>
     );
