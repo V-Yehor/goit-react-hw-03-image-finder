@@ -5,6 +5,7 @@ import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Loader } from './Loader/Loader';
 import { Button } from './Button/Button';
+import { AppWrapper } from './App.styled';
 import { fetchImages } from '../api';
 
 export class App extends Component {
@@ -56,7 +57,7 @@ export class App extends Component {
   render() {
     const { images, isloading } = this.state;
     return (
-      <div>
+      <AppWrapper>
         <Searchbar onSubmit={this.getSearchInfo} />
         {isloading && <Loader />}
         {this.state.images.length > 0 && (
@@ -67,7 +68,7 @@ export class App extends Component {
         )}
         <GlobalStyle />
         <Toaster />
-      </div>
+      </AppWrapper>
     );
   }
 }
