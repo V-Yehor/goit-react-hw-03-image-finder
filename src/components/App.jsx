@@ -1,8 +1,9 @@
 import { Component } from 'react';
 import { GlobalStyle } from './GlobalStyle';
+import toast, { Toaster } from 'react-hot-toast';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
-// import { Loader } from './Loader/Loader';
+import { Loader } from './Loader/Loader';
 import { Button } from './Button/Button';
 import { fetchImages } from '../api';
 
@@ -11,6 +12,7 @@ export class App extends Component {
     images: [],
     query: '',
     page: 1,
+    isloading: false,
   };
 
   async componentDidUpdate(prevProps, prevState) {
@@ -22,11 +24,16 @@ export class App extends Component {
       const slashIndex = query.indexOf('/') + 1;
       const trimedQuery = query.slice(slashIndex, query.length);
       try {
+        this.setState({ isloading: true });
         const fetchedImages = await fetchImages(trimedQuery, page);
         this.setState(prevState => {
           return { images: [...prevState.images, ...fetchedImages.data.hits] };
         });
-      } catch (error) {}
+      } catch (error) {
+        toast.error('Try again!');
+      } finally {
+        this.setState({ isloading: false });
+      }
     }
   }
 
@@ -47,10 +54,11 @@ export class App extends Component {
   };
 
   render() {
-    const { images } = this.state;
+    const { images, isloading } = this.state;
     return (
       <div>
         <Searchbar onSubmit={this.getSearchInfo} />
+        {isloading && <Loader />}
         {this.state.images.length > 0 && (
           <>
             <ImageGallery findedImages={images} />
@@ -58,6 +66,7 @@ export class App extends Component {
           </>
         )}
         <GlobalStyle />
+        <Toaster />
       </div>
     );
   }
